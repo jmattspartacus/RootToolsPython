@@ -17,4 +17,4 @@ from .multi_thread_hist_fill import *
 from .binning import *
 from sys import argv
 if not parsing.parse_boolean(argv, "silent", silent=True, output_message="", only_output_on_success=False):
-    print("Contact James if you have issues with CommonTools!")
+    print("Contact James if you have issues with RootTools!")
