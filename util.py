@@ -47,3 +47,15 @@ def plat_path_join(p: List[str]) -> str:
     return "\\".join(p)
   else:
     return "/".join(p)
+
+def plat_path_sep() -> str:
+  """Returns the correct path delimiter for 
+  the current platform
+
+  Returns:
+      str: the correct path delimiter for the platform
+  """
+  if platform == "win32":
+    return "\\"
+  else:
+    return "/"
