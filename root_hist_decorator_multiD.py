@@ -23,12 +23,49 @@ class RootHistDecoratorMultiD:
     def __init__(self, 
             field: str, 
             chain: Union[ROOT.TChain, Tuple[str, List[str]]], # type: ignore
-            xbinning: Binning, ybinning: Binning = Binning(0, 0, 0), zbinning: Binning = Binning(0, 0, 0), 
+            xbinning: Binning, 
+            ybinning: Binning = Binning(0, 0, 0), 
+            zbinning: Binning = Binning(0, 0, 0), 
             histtitle: str="default global", 
-            xlabel: str ="xlabel", ylabel: str = "ylabel", zlabel: str = "zlabel", 
-            histname: str = "default-h", cut: str = "", opt: str = "", 
-            showstats: bool = False, autodraw: bool = False, build_hist: bool =True, num_workers: int = 16, cache_location: str = "./cached_data/hists/", force_rebuild=False
+            xlabel: str ="xlabel", 
+            ylabel: str = "ylabel", 
+            zlabel: str = "zlabel", 
+            histname: str = "default-h", 
+            cut: str = "", 
+            opt: str = "", 
+            showstats: bool = False, 
+            autodraw: bool = False, 
+            build_hist: bool =True, 
+            num_workers: int = 16, 
+            cache_location: str = "./cached_data/hists/", 
+            force_rebuild=False
         ):
+        """
+
+        Args:
+            field (str): The branch of the tree or chain being used to fill the histogram
+            chain (Union[ROOT.TChain, Tuple[str, List[str]]]): the chain being used to fill the histogram, 
+            or a list of files containing root trees that can be used to fill the tree
+            xbinning (Binning, optional): Binning used for the x axis.
+            ybinning (Binning, optional): Binning used for the y axis if applicable. Defaults to Binning(0, 0, 0).
+            zbinning (Binning, optional): Binning for the z axis if applicable. Defaults to Binning(0, 0, 0).
+            histtitle (str, optional): Title of the histogram, needs to be unique, as root uses this on it's backend to store and retrieve the histogram. Defaults to "default global".
+            xlabel (str, optional): label for the x axis. Defaults to "xlabel".
+            ylabel (str, optional): label for the y axis. Defaults to "ylabel".
+            zlabel (str, optional): label for the z axis if applicable. Defaults to "zlabel".
+            histname (str, optional): name of the histogram, this is shown at the top of the panel when drawing by default. Defaults to "default-h".
+            cut (str, optional): The cut applied to select events to fill the histogram. Defaults to "".
+            opt (str, optional): draw options used for drawing the histogram. Defaults to "".
+            showstats (bool, optional): If true, the statistics of the histogram are shown, they are not always accurate reflecation of the histogram. Defaults to False.
+            autodraw (bool, optional): if true, the histogram will be drawn anytime something is changed. Defaults to False.
+            build_hist (bool, optional): if true, the histogram is filled immediately when the constructor is called. Defaults to True.
+            num_workers (int, optional): number of threads used to fill the histogram if it is a multithreaded build candidate. Defaults to 16.
+            cache_location (str, optional): the location that cached copies of the histogram are saved when filled, if already built, this is the location that rebuild_hist looks for the cached histogram. Defaults to "./cached_data/hists/".
+            force_rebuild (bool, optional): If true this will cause the histogram to be refilled even if it's already been made and cached. Defaults to False.
+
+        Raises:
+            ValueError: Raised when the dimension of the histogram is determined to be more than 3 because it's not supported.
+        """
         if num_workers < 1 or not isinstance(num_workers, int):
             num_workers = 1
         self.num_fill_workers = num_workers
@@ -74,8 +111,14 @@ class RootHistDecoratorMultiD:
             
     def get_cached(self, path) -> Tuple[bool, str]:
         hashstring = "".join([
-            self.histname, self.field, str(self.cut), f"Binning(x={self.binning[0]},y={self.binning[1]},z={self.binning[2]})",
-            self.histtitle, self.xlabel, self.ylabel, self.zlabel
+            self.histname, 
+            self.field, 
+            str(self.cut), 
+            f"Binning(x={self.binning[0]},y={self.binning[1]},z={self.binning[2]})",
+            self.histtitle, 
+            self.xlabel, 
+            self.ylabel, 
+            self.zlabel
         ])
         hashvalue = hashlib.md5(bytes(hashstring.encode("ascii")), usedforsecurity=False).hexdigest()
         return os.path.exists(path+hashvalue+".root"), hashvalue
