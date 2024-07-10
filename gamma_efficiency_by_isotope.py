@@ -22,8 +22,9 @@ def gamma_efficiency_by_isotope(energy, isotope, fractional=False, addback=True,
     
     # Treat lut like a lazy static
     if getattr(gamma_efficiency_by_isotope, "lut", None) is None:
-        basepath = util.plat_path_spl(__file__)[:-1]
-        with open(util.platpath(f"{basepath}/data/efficiency_fits_by_isotope.json"), "r") as fp:
+        basepath = util.plat_path_join(util.plat_path_spl(__file__)[:-1])+util.plat_path_sep()
+        ff = util.platpath("data/efficiency_fits_by_isotope.json")
+        with open(util.platpath(f"{basepath}{ff}"), "r") as fp:
             tsrt = "".join(fp.readlines())
         gamma_efficiency_by_isotope.lut = json.loads(tsrt)
     
