@@ -1,5 +1,5 @@
 from sys import platform
-
+from typing import List
 
 
 def platpath(p: str) -> str:
@@ -18,3 +18,17 @@ def platpath(p: str) -> str:
     return p.replace("/","\\")
   else:
     return p.replace("\\", "/")
+  
+def plat_path_spl(p: str) -> List[str]:
+  """Splits a platform path into it's parts
+
+  Args:
+      p (str): path to be split
+
+  Returns:
+      List[str]: list with the parts of the path
+  """
+  if platform == "win32":
+    return p.split("\\")
+  else:
+    return p.split("/")
