@@ -32,3 +32,18 @@ def plat_path_spl(p: str) -> List[str]:
     return p.split("\\")
   else:
     return p.split("/")
+  
+def plat_path_join(p: List[str]) -> str:
+  """Joins a path using the correct path delimeter 
+  for the platform
+
+  Args:
+      p (List[str]): parts of the path to join
+
+  Returns:
+      str: joined path
+  """
+  if platform == "win32":
+    return "\\".join(p)
+  else:
+    return "/".join(p)
