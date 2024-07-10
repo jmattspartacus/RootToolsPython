@@ -12,7 +12,7 @@ macro_files = [ util.platpath(i) for i in [
     "root_macros/TFileGetTH2D.C",
     "root_macros/TFileGetTH3D.C",
 ]]
-macro_fpath = util.plat_path_join(util.plat_path_spl(__file__)[:-1])+util.plat_path_sep
+macro_fpath = util.plat_path_join(util.plat_path_spl(__file__)[:-1])+util.plat_path_sep()
 macro_files = [macro_fpath + i for i in macro_files]
 
 def load_cpp_file(file: str) -> None:
