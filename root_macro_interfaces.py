@@ -1,8 +1,8 @@
 import ROOT
 import os
+from sys import platform
 from typing import Dict, Union
 
-macro_fpath = "/".join(__file__.split("/")[:-1])+"/"
 macro_files = [
     "root_macros/ReadPIDCut.C",
     "root_macros/MakePIDCut.C",
@@ -12,7 +12,13 @@ macro_files = [
     "root_macros/TFileGetTH2D.C",
     "root_macros/TFileGetTH3D.C",
 ]
-macro_files = [macro_fpath + i for i in macro_files]
+
+if platform == "win32":
+    macro_fpath = "\\".join(__file__.split("\\")[:-1])+"\\"
+    macro_files = [macro_fpath + i.replace("/", "\\") for i in macro_files]
+else:
+    macro_fpath = "/".join(__file__.split("/")[:-1])+"/"
+    macro_files = [macro_fpath + i for i in macro_files]
 
 def load_cpp_file(file: str) -> None:
     if not os.path.exists(file):
