@@ -110,7 +110,7 @@ class LiteratureValues:
         self.elements = {}
         self.nudat = Nudat(self)
         self.moller = Moller(self)
-        with open(f"{data_dir}/nucleiSymbols.csv") as fp:
+        with open(util.platpath(f"{data_dir}/nucleiSymbols.csv")) as fp:
             reader = csv.reader(fp, delimiter=",")
             next(reader)
             for row in reader:
