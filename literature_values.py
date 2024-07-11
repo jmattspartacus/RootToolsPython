@@ -3,8 +3,9 @@ import sys
 import re
 from . import handyutils
 from typing import Tuple
+from . import util
 
-data_dir=__file__.replace(__file__.split("/")[-1], "data")
+data_dir=__file__.replace(__file__.split(util.plat_path_sep)[-1], "data")
 
 class Moller:
     def __init__(self, parent) -> None:
@@ -17,7 +18,7 @@ class Moller:
         
         from glob import glob
         import csv
-        files = glob(f"{data_dir}/moller2019/*.csv")
+        files = glob(util.platpath(f"{data_dir}/moller2019/*.csv"))
         for i in files:
             with open(i, "r") as fp:
                 reader = csv.reader(fp, delimiter=",")
@@ -63,7 +64,7 @@ class Nudat:
     def __init__(self, parent) -> None:
         self.data = {}
         self.IsotopeStrToZNTuple = parent.IsotopeStrToZNTuple
-        with open(f"{data_dir}/nudat/nuclei_halflives.csv", "r") as fp:
+        with open(util.platpath(f"{data_dir}/nudat/nuclei_halflives.csv", "r")) as fp:
             reader = csv.reader(fp, delimiter=",")
             next(reader)
             for row in reader:
