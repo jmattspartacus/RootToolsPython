@@ -102,37 +102,6 @@ def capture_stdout_for_func(func, args=None) -> str:
 def check_root_fit_success(fitresultstr) -> bool:
     return "CONVERGED" in fitresultstr
 
-
-def table_to_tex(table, columnar = True):
-    ret = []
-    if columnar:
-        for i in range(len(table[0])):
-            ret.append("")
-
-        for i in range(len(table[0])):
-            for j in range(len(table)):
-                if j < len(table) - 1:
-                    ret[i] += f"{table[j][i]} &"
-                else:
-                    ret[i] += f"{table[j][i]}\\\\"
-    else:
-        maxlen = 0
-        for i in table:
-            maxlen = maxlen if len(i) < maxlen else len(i)
-        for i in table:
-            tline = ""
-            for j in range(maxlen):
-                if j < len(i) and j < maxlen - 1:
-                    tline += f"{i[j]}&"
-                elif j < len(i):
-                    tline += f"{i[j]}\\\\"
-                elif j < maxlen - 1:
-                    tline += "&"
-                else:
-                    tline += "\\\\"
-            ret.append(tline)
-    return ret
-
 def time_me(func, args=None, print_out=False):
     start = time.time()
     if args is None:
