@@ -1,6 +1,7 @@
 import typing
 import math
 from .analysis_tools import sigma_to_fwhm
+import ROOT
 
 class FitResultSummary1D:
     def __init__(self, location: float, width: float, counts: float, fitlow: float, fithigh: float, fitintegral: float, fiterrorintegral: float) -> None:
@@ -68,7 +69,8 @@ class FitResultWrapper:
             print(f"Fit result has bad_fit flag, consider not using it")
         return sigma_to_fwhm(abs(self.func.GetParameter(4)))
     
-
+    def set_label_position(self, x: float, y: float) -> None:
+        self.text.SetBBoxCenter(ROOT.TPoint(x, y))
 
 
 class MultiFitResult:
@@ -154,6 +156,17 @@ class MultiFitResult:
     def collect_good(self) -> typing.List[FitResultWrapper]:
         return [self.fits[i] for i in self.get_good_fit_keys()]
 
+    def set_label_position(self, key: typing.Hashable, x: float, y: float) -> None:
+        """Sets the position of the label for a fit for a given key
 
+        Args:
+            key (typing.Hashable): key corresponding to the fit
+            x (float): position of the center of the label on the x axis
+            y (float): position of the center of the label on the y axis
 
-
+        Raises:
+            KeyError: _description_
+        """
+        if key not in self.fits:
+            raise KeyError(f"key {key} does not exist")
+        self.fits[key].set_label_position(x, y)
