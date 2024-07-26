@@ -14,6 +14,7 @@ from .root_macro_interfaces import *
 from .trace_analyzer_fields import *
 from .multi_thread_hist_fill import *
 from .binning import *
+from .par_iter import *
 from sys import argv, platform
 # uses readline, which is not available for windows
 if platform == "linux" or platform == "linux2" or platform == "darwin":
