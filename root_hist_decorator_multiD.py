@@ -26,8 +26,8 @@ class RootHistDecoratorMultiD:
             xbinning: Binning, 
             ybinning: Binning = Binning(0, 0, 0), 
             zbinning: Binning = Binning(0, 0, 0), 
-            histtitle: str="default global", 
-            xlabel: str ="xlabel", 
+            histtitle: str = "default global", 
+            xlabel: str = "xlabel", 
             ylabel: str = "ylabel", 
             zlabel: str = "zlabel", 
             histname: str = "default-h", 
@@ -35,10 +35,10 @@ class RootHistDecoratorMultiD:
             opt: str = "", 
             showstats: bool = False, 
             autodraw: bool = False, 
-            build_hist: bool =True, 
+            build_hist: bool = True, 
             num_workers: int = 16, 
             cache_location: str = "./cached_data/hists/", 
-            force_rebuild=False
+            force_rebuild: bool = False
         ):
         """
 
@@ -109,6 +109,34 @@ class RootHistDecoratorMultiD:
         if build_hist:
             self.rebuild_hist(False, force_rebuild=False)
             
+    @staticmethod
+    def from_dict(d):
+        field = d["field"] if "field" in d else None
+        chain = d["chain"] if "chain" in d else None
+        xbinning = d["xbinning"] if "xbinning" in d else None
+        ybinning = d["ybinning"] if "ybinning" in d else Binning(0, 0, 0)
+        zbinning = d["zbinning"] if "zbinning" in d else Binning(0, 0, 0)
+        histtitle = d["histtitle"] if "histtitle" in d else "default global"
+        xlabel = d["xlabel"] if "xlabel" in d else "xlabel"
+        ylabel = d["ylabel"] if "ylabel" in d else "ylabel"
+        zlabel = d["zlabel"] if "zlabel" in d else "zlabel"
+        histname = d["histname"] if "histname" in d else "default-h"
+        cut = d["cut"] if "cut" in d else ""
+        opt = d["opt"] if "opt" in d else ""
+        showstats = d["showstats"] if "showstats" in d else False
+        autodraw = d["autodraw"] if "autodraw" in d else False
+        build_hist = d["build_hist"] if "build_hist" in d else True
+        num_workers = d["num_workers"] if "num_workers" in d else 16
+        cache_location = d["cache_location"] if "cache_location" in d else "./cached_data/hists/"
+        force_rebuild = d["force_rebuild"] if "force_rebuild" in d else False
+        a=[field, chain, xbinning, ybinning, zbinning, 
+           histtitle, xlabel, ylabel, zlabel, histname, 
+           cut, opt, showstats, autodraw, build_hist, 
+           num_workers, cache_location, force_rebuild]
+        if field is None or chain is None or xbinning is None:
+            return None
+        return RootHistDecoratorMultiD(*a)
+    
     def get_cached(self, path) -> Tuple[bool, str]:
         hashstring = "".join([
             self.histname, 
