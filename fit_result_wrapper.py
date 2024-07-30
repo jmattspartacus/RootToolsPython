@@ -70,7 +70,8 @@ class FitResultWrapper:
         return sigma_to_fwhm(abs(self.func.GetParameter(4)))
     
     def set_label_position(self, x: float, y: float) -> None:
-        self.text.SetBBoxCenter(ROOT.TPoint(x, y))
+        t_str = self.text.GetTitle()
+        self.text.SetText(x, y, t_str)
 
 
 class MultiFitResult:
