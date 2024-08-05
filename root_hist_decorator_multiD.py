@@ -106,6 +106,7 @@ class RootHistDecoratorMultiD:
         self.peaks          = {}
         self.cache_location = cache_location
         self.histfile = None
+        self.cache_loaded = False
         if build_hist:
             self.rebuild_hist(False, force_rebuild=False)
             
@@ -137,7 +138,7 @@ class RootHistDecoratorMultiD:
             return None
         return RootHistDecoratorMultiD(*a)
     
-    def get_cached(self, path) -> Tuple[bool, str]:
+    def get_is_cached_and_hash(self, path) -> Tuple[bool, str]:
         hashstring = "".join([
             self.histname, 
             self.field, 
@@ -221,26 +222,19 @@ class RootHistDecoratorMultiD:
         Args:
             checkdraw (bool, optional): Should we check whether we autodraw? If true draws after building. Defaults to True.
         """
-        exists, hashvalue = self.get_cached(self.cache_location)
+        exists, _ = self.get_is_cached_and_hash(self.cache_location)
         if self.histfile is not None:
             # prevent file ptr errors
             self.histfile.Close()
-        cache_loaded = False
-        if exists and not force_rebuild:
-            cache_loaded = True
-            self.histfile = ROOT.TFile.Open(self.cache_location+hashvalue+".root")
-            self.hist = TFileGetHist(self.histfile, self.histname, self.dimension)
-        else:
+        self.cache_loaded = False
+        if not exists or force_rebuild:
             self.hist = multi_thread_hist_fill_KD_chain(self.chain, self.field, self.binning, self.dimension, self.num_fill_workers, self.histname, self.histtitle, self.cut)
-            if not os.path.exists(self.cache_location):
-                pathlib.Path(self.cache_location).mkdir(parents=True, exist_ok=True)
-            # always cache on rebuild
-            self.hist.SaveAs(self.cache_location+hashvalue+".root")
-        # load cached hist because SaveAs does something funky with
+            self.cache_hist()
+        # load cached hist even on rebuild because 
+        # SaveAs does something funky with
         # the histogram making it CPPYYNONE
-        if os.path.exists(self.cache_location+hashvalue+".root") and not cache_loaded:
-            self.histfile = ROOT.TFile.Open(self.cache_location+hashvalue+".root")
-            self.hist = TFileGetHist(self.histfile, self.histname, self.dimension)
+        # which causes something like nullptr deref when 
+        self.load_cached()
     
         for i in range(self.dimension):
             self.ranges[i]         = (self.binning[i].bin_low, self.binning[i].bin_high)
@@ -959,3 +953,76 @@ class RootHistDecoratorMultiD:
             fp.write(f"{self.xfield}, counts\n")
             for i in bins:
                 fp.write(", ".join([str(j) for j in i])+"\n")
+
+    def project_onto_x(self) -> 'RootHistDecoratorMultiD':
+        return self.project_onto_axis("x")
+    def project_onto_y(self) -> 'RootHistDecoratorMultiD':
+        return self.project_onto_axis("y")
+    def project_onto_z(self) -> 'RootHistDecoratorMultiD':
+        return self.project_onto_axis("z")
+
+    def project_onto_axis(self, axis: str) -> 'RootHistDecoratorMultiD':
+        if self.dimension > 3 or self.dimension < 0:
+            raise ValueError("Cannot project an N>3 or N<0 dimensional histogram")
+        rhist = {
+            "x": self.hist.ProjectionX,
+            "y": self.hist.ProjectionY if self.dimension > 1 else self.hist.ProjectionX,
+            "z": self.hist.ProjectionZ if self.dimension > 2 else self.hist.ProjectionX
+        }[axis]()
+        axis_idx = {
+            1:{"x" : 0},
+            2:{"y" : 0, "x" : 1},
+            3:{"z" : 0, "y" : 1, "x" : 2},
+        }[self.dimension][axis]
+        rtitle  = self.histtitle + f"_{axis}_projection"
+        rname   = self.histname  + f"_{axis}_projection"
+        if self.dimension == 1:
+            ret = RootHistDecoratorMultiD.construct_from_histogram(
+                self.field,
+                self.chain,
+                self.hist, 
+                self.histtitle+"_copy",
+                self.xlabel,
+                self.ylabel,
+                self.histname+"_copy",
+                self.draw_options,
+                self.cut,
+                self.show_stats,
+                self.autodraw
+            )
+        else:
+            ret = RootHistDecoratorMultiD.construct_from_histogram(
+                self.field.split(":")[axis_idx],
+                self.chain,
+                rhist, 
+                rtitle,
+                self.xlabel,
+                self.ylabel,
+                rname,
+                self.draw_options,
+                self.cut,
+                self.show_stats,
+                self.autodraw
+            )
+        ret.binning  = [i for i in self.binning]
+        ret.num_bins = [i.get_num_bins() for i in self.binning]
+        ret.default_ranges = [i for i in self.default_ranges]
+        ret.cache_location = self.cache_location
+        ret.histfile = None
+        return rhist
+    
+    def cache_hist(self) -> None:
+        _, hashvalue = self.get_is_cached_and_hash(self.cache_location)
+        # this is just the directory, not the file location
+        if not os.path.exists(self.cache_location):
+            pathlib.Path(self.cache_location).mkdir(parents=True, exist_ok=True)
+            # always cache on rebuild
+            self.hist.SaveAs(self.cache_location+hashvalue+".root")
+
+    def load_cached(self) -> None:
+        _, hashvalue = self.get_is_cached_and_hash(self.cache_location)
+        # this is just the directory and not the file location
+        if os.path.exists(self.cache_location+hashvalue+".root") and not self.cache_loaded:
+            self.cache_loaded = True
+            self.histfile = ROOT.TFile.Open(self.cache_location+hashvalue+".root")
+            self.hist = TFileGetHist(self.histfile, self.histname, self.dimension)
