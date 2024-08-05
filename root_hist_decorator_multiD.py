@@ -1009,7 +1009,7 @@ class RootHistDecoratorMultiD:
         ret.default_ranges = [i for i in self.default_ranges]
         ret.cache_location = self.cache_location
         ret.histfile = None
-        return rhist
+        return ret
     
     def cache_hist(self) -> None:
         _, hashvalue = self.get_is_cached_and_hash(self.cache_location)
