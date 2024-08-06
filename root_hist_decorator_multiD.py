@@ -487,14 +487,25 @@ class RootHistDecoratorMultiD:
         Args:
             options_override (str, optional): Specify drawing options to allow multiple histograms on the same plot for instance. Defaults to "".
         """
-        if cd:
-            self.canvas.cd()
-        
+        draw_same = "same" in options_override.lower()
+        try:
+            if self.canvas is None:
+                random_name = random_string(32)
+                self.canvas = ROOT.TCanvas(random_name+"_title", random_name+"_name", 800, 480)
+            if cd and not draw_same:
+                self.canvas.cd()
+        except Exception as e:
+            random_name = random_string(32)
+            self.canvas = ROOT.TCanvas(random_name+"_title", random_name+"_name", 800, 480)
+        finally:
+            if cd and not draw_same:
+                self.canvas.cd()
         if options_override == "":
             self.hist.Draw(self.draw_options)
         else:
             self.hist.Draw(options_override)
-        self.canvas.Draw()
+        if not draw_same:
+            self.canvas.Draw()
 
     def set_cut(self, cut: str, force_rebuild_hist=False) -> None:
         """Sets the cut used to select events from the chain, and subsequently rebuilds the histogram.
@@ -877,21 +888,39 @@ class RootHistDecoratorMultiD:
         showstats: bool = False, 
         autodraw:  bool = False
     ) -> 'RootHistDecoratorMultiD':
+        dims = len(field.split(":"))
         numbins = histogram.GetNbinsX()
         low     = histogram.GetXaxis().GetXmin()
         high    = histogram.GetXaxis().GetXmax()
         bin_width = (high - low) / numbins
+        xbinning = Binning(bin_width, low, high)
+        if dims > 1:
+            numbins = histogram.GetNbinsY()
+            low     = histogram.GetYaxis().GetYmin()
+            high    = histogram.GetYaxis().GetYmax()
+            bin_width = (high - low) / numbins
+            _ybinning = Binning(bin_width, low, high)
+        else:
+            _ybinning = Binning(0,0,0)
+        if dims > 2:
+            numbins = histogram.GetNbinsY()
+            low     = histogram.GetYaxis().GetYmin()
+            high    = histogram.GetYaxis().GetYmax()
+            bin_width = (high - low) / numbins
+            _zbinning = Binning(bin_width, low, high)
+        else:
+            _zbinning = Binning(0, 0, 0)
+        if dims > 3:
+            raise ValueError("Cannot handle histograms of dimension > 3")
         xlabel = histogram.GetXaxis().GetTitle() if xlabel == "" else xlabel
         ylabel = histogram.GetYaxis().GetTitle() if ylabel == "" else ylabel
         title  = histogram.GetTitle() if title == "" else title
         name   = histogram.GetName() if name == "" else name
-        ret     = RootHistDecoratorMultiD(field, chain, Binning(bin_width, low, high), ybinning=Binning(0,0,0), zbinning=Binning(0,0,0),
+        ret    = RootHistDecoratorMultiD(field, chain, xbinning, ybinning=_ybinning, zbinning=_zbinning,
                                            histtitle=title, xlabel=xlabel, 
                                           ylabel=ylabel, histname=name, opt=opt, cut=cut, 
                                           showstats=showstats, autodraw=autodraw, build_hist=False)
         ret.hist = histogram
-        ret.default_ranges[1] = (ret.hist.GetMinimum(), ret.hist.GetMaximum())
-        ret.ranges[1] = (ret.hist.GetMinimum(), ret.hist.GetMaximum())
         ret.check_autodraw()
         return ret
     
