@@ -1045,8 +1045,8 @@ class RootHistDecoratorMultiD:
         # this is just the directory, not the file location
         if not os.path.exists(self.cache_location):
             pathlib.Path(self.cache_location).mkdir(parents=True, exist_ok=True)
-            # always cache on rebuild
-            self.hist.SaveAs(self.cache_location+hashvalue+".root")
+        # always cache on rebuild
+        self.hist.SaveAs(self.cache_location+hashvalue+".root")
 
     def load_cached(self) -> None:
         _, hashvalue = self.get_is_cached_and_hash(self.cache_location)
