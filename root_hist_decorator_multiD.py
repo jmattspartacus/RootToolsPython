@@ -666,7 +666,7 @@ class RootHistDecoratorMultiD:
             linconstfuncpk = ROOT.TF1(funcname, "gaus(2) + [0] + ([1] * x)", fitlow, fithigh) # type: ignore
             linconstfuncpk.SetParameter(2, 5)
             if fixpk:
-                print("Fix pk at", pk, "with diff", diff, "with caption ", trypk[i][2])
+                #print("Fix pk at", pk, "with diff", diff, "with caption ", trypk[i][2])
                 linconstfuncpk.FixParameter(3, pk)
             else:
                 linconstfuncpk.SetParameter(3, pk)
@@ -983,14 +983,14 @@ class RootHistDecoratorMultiD:
             for i in bins:
                 fp.write(", ".join([str(j) for j in i])+"\n")
 
-    def project_onto_x(self) -> 'RootHistDecoratorMultiD':
-        return self.project_onto_axis("x")
-    def project_onto_y(self) -> 'RootHistDecoratorMultiD':
-        return self.project_onto_axis("y")
-    def project_onto_z(self) -> 'RootHistDecoratorMultiD':
-        return self.project_onto_axis("z")
+    def project_onto_x(self, title: str = "projection") -> 'RootHistDecoratorMultiD':
+        return self.project_onto_axis("x", title)
+    def project_onto_y(self, title: str = "projection") -> 'RootHistDecoratorMultiD':
+        return self.project_onto_axis("y", title)
+    def project_onto_z(self, title: str = "projection") -> 'RootHistDecoratorMultiD':
+        return self.project_onto_axis("z", title)
 
-    def project_onto_axis(self, axis: str) -> 'RootHistDecoratorMultiD':
+    def project_onto_axis(self, axis: str, title: str = "projection") -> 'RootHistDecoratorMultiD':
         if self.dimension > 3 or self.dimension < 0:
             raise ValueError("Cannot project an N>3 or N<0 dimensional histogram")
         rhist = {
@@ -1003,8 +1003,10 @@ class RootHistDecoratorMultiD:
             2:{"y" : 0, "x" : 1},
             3:{"z" : 0, "y" : 1, "x" : 2},
         }[self.dimension][axis]
-        rtitle  = self.histtitle + f"_{axis}_projection"
-        rname   = self.histname  + f"_{axis}_projection"
+        rtitle  = self.histtitle + f"_{axis}_{title}"
+        rname   = self.histname  + f"_{axis}_{title}"
+        rhist.SetTitle(rtitle)
+        rhist.SetName(rname)
         if self.dimension == 1:
             ret = RootHistDecoratorMultiD.construct_from_histogram(
                 self.field,
