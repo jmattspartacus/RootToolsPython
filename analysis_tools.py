@@ -831,8 +831,131 @@ def simpson_integration(low: float, high: float, step_size: float, fn: Callable[
         ret /= step_size
     return ret * h * post
 
+
+def k_panel_plot(bounds, 
+                 ylims, 
+                 labels, 
+                 hist,
+                 x_label: str = "Gamma Energy (keV)"):
+  before = hist.autodraw
+  hist.autodraw = False
+  hist.reset_x_range()
+  hist.autodraw = before
+  hist_bins = hist.get_bin_values_pairs()
+  fig, ax = pyplot.subplots(len(bounds),1, figsize=(12,8))
+  for b in range(len(bounds)):
+    low, high = bounds[b]
+    # get rid of bins that are <= 0
+    xs = [i[0] for i in hist_bins if i[0] >= low and i[0] < high and i[1] > 0]
+    ys = [i[1] for i in hist_bins if i[0] >= low and i[0] < high and i[1] > 0]
+    min_above_zero = min(ys)
+    mx = max(ys)
+    ax[b].step(xs, ys, linewidth=2, color="blue")
+    ax[b].set_xlim(*bounds[b])
+    if ylims[b] is not None:
+      ax[b].set_ylim(*ylims[b])
+    else:
+      ax[b].set_ylim(min_above_zero, mx*1.1)
+    for j in labels:
+      # if label is in the range of this plot draw it
+      if j[0] < low or j[0] > high:
+        continue
+      xval = (j[0] - low) / (high-low)
+      t_ylims = ax[b].get_ylim()
+      # text is in coordinates on range (0, 1) so we need to transform into that range
+      yval = (j[1] - t_ylims[0]) / (t_ylims[1] - t_ylims[0])
+      pyplot.text(xval, yval, j[2], transform=ax[b].transAxes, horizontalalignment='center')
+      # draw an arrow to the transition energy
+      if j[3] is not None:
+        arrow_x = j[3][0]
+        arrow_y = j[3][1]
+        ax[b].arrow(j[0], j[1]*.96, arrow_x-j[0], arrow_y-j[1])
+  ax[-1].set_xlabel(x_label)
+  return fig, ax
+
+
+def setup_ggb_fit(guess_pk: float, 
+              fit_rng: tuple[float, float], 
+              amplitude_guess: float, 
+              timing:          tuple[tuple[float, float], tuple[float, float], tuple[float, float]], 
+              plot_ranges:     tuple[tuple[float, float], tuple[float, float]], 
+              width_param:     tuple[float, bool],
+              env_params,
+              timing_bg_sub:   bool = False):
+  gamma_gated_beta = env_params["gamma_gated_beta"]
+  sig_hist_choice = env_params["sig_hist_choice"]
+  bgg_fitter = env_params["bgg_fitter"]
+  bgg_fitter_bkg =  env_params["bgg_fitter_bkg"]
+  gamma_binwidth =  env_params["gamma_binwidth"]
+  beta_window_width =  env_params["beta_window_width"]
+  peak_rng, left_bg_rng, right_bg_rng = timing
+  pk_erg_fit = ROOT.TF1(f"{int(guess_pk)}fit", "gaus(2) + [0] + ([1] * x)", *fit_rng) # type: ignore
+  pk_erg_fit.SetParameter(2, amplitude_guess) # amplitude pk1
+  pk_erg_fit.SetParLimits(2, 0, 1e5)
+
+  pk_erg_fit.SetParameter(3, guess_pk) # pk 1
+  pk_erg_fit.SetParLimits(3, *fit_rng) 
+  # width
+  if width_param[1]:
+    pk_erg_fit.FixParameter(4, width_param[0]) 
+  else:
+    pk_erg_fit.SetParameter(4, width_param[0]) 
+    pk_erg_fit.SetParLimits(4, 0, 10)
+  t_pkstr = f"{int(guess_pk)}"
+  # narrow the energy gate on the peak
+  gamma_gated_beta.set_x_range(*peak_rng)
+  # timing of the peak
+  peak_timing = gamma_gated_beta.project_onto_y(t_pkstr)
+  # narrow to the left handed background
+  gamma_gated_beta.set_x_range(*left_bg_rng)
+  # timing of the left handed background
+  right_bg_timing = gamma_gated_beta.project_onto_y(f"bgr_{t_pkstr}")
+  # narrow in on right handed background
+  gamma_gated_beta.set_x_range(*right_bg_rng)
+  # timing of the right handed background
+  left_bg_timing = gamma_gated_beta.project_onto_y(f"bgl_{t_pkstr}")
+
+  # scale left and right handed background by 0.5 and subtract
+  if timing_bg_sub:
+    peak_timing.background_subtract_hists(right_bg_timing, 0.5)
+    peak_timing.background_subtract_hists(left_bg_timing,  0.5)
+  left_bg_timing.hist.SetLineColor(2)
+  right_bg_timing.hist.SetLineColor(3)
+  right_bg_timing.draw()
+  left_bg_timing.draw()
+  peak_timing.draw()
+
+  sig_hist_choice.set_x_range(*plot_ranges[0])
+  sig_hist_choice.set_y_range(*plot_ranges[1])
+  fr = sig_hist_choice.hist.Fit(f"{t_pkstr}fit", "SQLM", "H", *fit_rng)
+  sig_hist_choice.draw()
+  pk_erg_fit.Draw("same")
+
+  # do the fit
+  bgg_fitter.Fit(
+      peak_timing.hist,
+  )
+  bgg_fitter.func_obj.Draw("same")
+  half = decay_constant_to_halflife(bgg_fitter.func_obj.GetParameter(4))
+  half_err = decay_constant_to_halflife(bgg_fitter.func_obj.GetParameter(4)) * (bgg_fitter.func_obj.GetParError(4) / bgg_fitter.func_obj.GetParameter(4))
+  print(f"Halflife {half:.2f} +- {half_err:.2f}")
+  print("Peak at {:.1f} pm ({:.1f}) keV amplitude {:.1f} width {:.2f}".format(pk_erg_fit.GetParameter(3), pk_erg_fit.GetParError(3), pk_erg_fit.GetParameter(2), pk_erg_fit.GetParameter(4)))
+  # getting counts in the pk
+  lin_const_terms = ROOT.TF1(f"{t_pkstr}_linconst", "[0] + ([1] * x)", *fit_rng)
+  lin_const_terms.SetParameter(0, pk_erg_fit.GetParameter(0))
+  lin_const_terms.SetParameter(1, pk_erg_fit.GetParameter(1))
+  integral_val = simpson_integration(*fit_rng, gamma_binwidth, pk_erg_fit.Eval, True) - simpson_integration(*fit_rng, gamma_binwidth, lin_const_terms.Eval, True)
+  print(f"Counts in pk {integral_val}")
+  # getting counts in the timing spectra
+  bgg_fitter_bkg.SetParameter(0, bgg_fitter.func_obj.GetParameter(0))
+  bgg_timing_integral = bgg_fitter.func_obj.Integral(-100, beta_window_width) - bgg_fitter_bkg.Integral(-100, beta_window_width)
+  print(f"Bgg counts {bgg_timing_integral}")
+  return pk_erg_fit, right_bg_timing, left_bg_timing, peak_timing
+
+
 if __name__ == "__main__":
     args = sys.argv
     from . import parsing
     istestmode = parsing.parse_boolean(args, "test")
     
+
