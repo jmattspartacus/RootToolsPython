@@ -9,7 +9,7 @@ class IgammaScheme:
                  isotope: str, 
                  mother_decays: float, 
                  mother_decay_err: float, 
-                 radius: float, 
+                 radius: Union[float | str], 
                  tmax: float, 
                  use_per_isotope_efficiency: bool = True, 
                  preferred_efficiency_curve: str = ""
@@ -48,7 +48,7 @@ class IgammaScheme:
                 (val["counts"], val["err"])]
             ) * i_gamma
             
-            ret += f"\t{val['pk']:>8.2f} keV {self.__fhwm_phrase(i)} measured {i_gamma*100:>7.3f}% pm {error*100:>7.3f}% literature {val['lit']}\n"
+            ret += f"\t{val['pk']:>8.2f} keV {self.get_counts(i):>10.0f} cts {self.__fhwm_phrase(i)} measured {i_gamma*100:>7.3f}% pm {error*100:>7.3f}% literature {val['lit']}\n"
         return ret
 
     def get_igamma_relative(self, key: Hashable, refline: Hashable = None) -> Tuple[Hashable, float, float, float, float]:
@@ -194,13 +194,17 @@ class IgammaScheme:
         # first verify that all keys exist
         if len(scheme) != 4:
                 raise ValueError("All schemes elements must have length of 3")
+        # key for this scheme
         if scheme[0] not in self.scheme:
             raise KeyError(f"All keys must exist in the provided scheme, scheme head {scheme[0]} not found")
+        # key for each "feeding" transition
         for j in scheme[1]:
             if j not in self.scheme:
                 raise KeyError(f"All keys must exist in the provided scheme, scheme feed {j} not found")
+        # key for each transition that is fed by this transition
         for j in scheme[2]:
             if j not in self.scheme:
+                print(type(j), j)
                 raise KeyError(f"All keys must exist in the provided scheme, scheme draw {j} not found")
         # grab the key from the scheme, usually it's just the energy we started fitting the peak with.
         key  = scheme[0]
