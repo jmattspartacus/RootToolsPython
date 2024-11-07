@@ -950,8 +950,11 @@ def setup_ggb_fit(guess_pk: float,
   bgg_fitter_bkg.SetParameter(0, bgg_fitter.func_obj.GetParameter(0))
   bgg_timing_integral = bgg_fitter.func_obj.Integral(-100, beta_window_width) - bgg_fitter_bkg.Integral(-100, beta_window_width)
   print(f"Bgg counts {bgg_timing_integral}")
-  return pk_erg_fit, right_bg_timing, left_bg_timing, peak_timing
+  return pk_erg_fit, right_bg_timing, left_bg_timing, peak_timing, fr
 
+
+def calc_bgt_from_ft(ft: float) -> float:
+  return 6144.2 / (ft * (1.27**2))
 
 if __name__ == "__main__":
     args = sys.argv
