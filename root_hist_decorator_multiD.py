@@ -655,44 +655,47 @@ class RootHistDecoratorMultiD:
             raise ValueError("try_fit_peaks_lin_const_gauss is not currently supported for multidimensional histograms!")
         pks = MultiFitResult()
         for i in range(len(trypk)):
-            pk = trypk[i][0]
-            diff = trypk[i][1]
-            fixpk = trypk[i][4]
-            fitlow = pk - diff
-            fithigh = pk + diff
-            self.set_x_range(pk - 100, pk + 100)
+            try:
+                pk = trypk[i][0]
+                diff = trypk[i][1]
+                fixpk = trypk[i][4]
+                fitlow = pk - diff
+                fithigh = pk + diff
+                self.set_x_range(pk - 100, pk + 100)
 
-            funcname = f"linconstfit{pk}{funcnamebase}"
-            linconstfuncpk = ROOT.TF1(funcname, "gaus(2) + [0] + ([1] * x)", fitlow, fithigh) # type: ignore
-            linconstfuncpk.SetParameter(2, 5)
-            if fixpk:
-                #print("Fix pk at", pk, "with diff", diff, "with caption ", trypk[i][2])
-                linconstfuncpk.FixParameter(3, pk)
-            else:
-                linconstfuncpk.SetParameter(3, pk)
-            linconstfuncpk.SetParameter(4, diff)
-            
-            fitresult = self.hist.Fit(funcname, fitting_options, "H", fitlow, fithigh)
-            pkcenter = linconstfuncpk.GetParameter(3)
-            pkerr    = get_standard_uncertainty_str(
-                pkcenter, 
-                linconstfuncpk.GetParError(3)
-            )
-            text = ROOT.TLatex(linconstfuncpk.GetParameter(3), linconstfuncpk.GetParameter(2), f"{pkerr} keV {trypk[i][2]}") # type: ignore
-            self.auto_scale_y()
-            text.Draw("same")
-
-            pks.add_fit_result(
-                pk,
-                FitResultWrapper(
-                    linconstfuncpk, 
-                    text,
-                    FitResultSummary1D(linconstfuncpk.GetParameter(3), linconstfuncpk.GetParError(3), abs(gaussian_area(linconstfuncpk.GetParameter(4), linconstfuncpk.GetParameter(2))), fitlow, fithigh, linconstfuncpk.Integral(fitlow, fithigh), linconstfuncpk.IntegralError(fitlow, fithigh)),
-                    fitresult,
-                    abs(linconstfuncpk.GetParameter(4)) > diff,
-                    fitresult.GetCovarianceMatrix()
+                funcname = f"linconstfit{pk}{funcnamebase}"
+                linconstfuncpk = ROOT.TF1(funcname, "gaus(2) + [0] + ([1] * x)", fitlow, fithigh) # type: ignore
+                linconstfuncpk.SetParameter(2, 5)
+                if fixpk:
+                    #print("Fix pk at", pk, "with diff", diff, "with caption ", trypk[i][2])
+                    linconstfuncpk.FixParameter(3, pk)
+                else:
+                    linconstfuncpk.SetParameter(3, pk)
+                linconstfuncpk.SetParameter(4, diff)
+                
+                fitresult = self.hist.Fit(funcname, fitting_options, "H", fitlow, fithigh)
+                pkcenter = linconstfuncpk.GetParameter(3)
+                pkerr    = get_standard_uncertainty_str(
+                    pkcenter, 
+                    linconstfuncpk.GetParError(3)
                 )
-            )
+                text = ROOT.TLatex(linconstfuncpk.GetParameter(3), linconstfuncpk.GetParameter(2), f"{pkerr} keV {trypk[i][2]}") # type: ignore
+                self.auto_scale_y()
+                text.Draw("same")
+
+                pks.add_fit_result(
+                    pk,
+                    FitResultWrapper(
+                        linconstfuncpk, 
+                        text,
+                        FitResultSummary1D(linconstfuncpk.GetParameter(3), linconstfuncpk.GetParError(3), abs(gaussian_area(linconstfuncpk.GetParameter(4), linconstfuncpk.GetParameter(2))), fitlow, fithigh, linconstfuncpk.Integral(fitlow, fithigh), linconstfuncpk.IntegralError(fitlow, fithigh)),
+                        fitresult,
+                        abs(linconstfuncpk.GetParameter(4)) > diff,
+                        fitresult.GetCovarianceMatrix()
+                    )
+                )
+            except Exception as e:
+                print(f"Threw exception for input '{trypk[i]}':\n", e)
             
         self.autodraw = True
         self.reset_x_range()
