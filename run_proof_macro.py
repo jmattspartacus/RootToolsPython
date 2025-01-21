@@ -3,8 +3,11 @@ import re
 from glob import glob
 import sys
 
-from CommonToolsPython import *
 
+if __name__ != "__main__":
+    from RootToolsPython import *
+else:
+    from parsing import *
 
 
 def build_and_run_macro(
@@ -60,6 +63,6 @@ if __name__ == "__main__":
     selectorPath = parse_string_arg(sys.argv, "selector", "Selector set to: $argval")
     macroName = parse_string_arg(sys.argv, "macroName", "Macro name set to: $argval")
     treeName = parse_string_arg(sys.argv, "treename", "TreeName in file: $argval" , "OutputTree")
-    workers = parse_int_arg(args, "workers", "Workers set to: $argval", 8, kill_on_fail=False, min_value=1, max_value=32)
+    workers = parse_int_arg(sys.argv, "workers", "Workers set to: $argval", 8, kill_on_fail=False, min_value=1, max_value=32)
     dry_run = parse_boolean(sys.argv, "dry")
     build_and_run_macro(inputDir, outputDir, selectorPath, macroName, treeName, workers, dry_run, True)
