@@ -9,7 +9,7 @@ class IgammaScheme:
                  isotope: str, 
                  mother_decays: float, 
                  mother_decay_err: float, 
-                 radius: Union[float | str], 
+                 radius: Union[float , str], 
                  tmax: float, 
                  use_per_isotope_efficiency: bool = True, 
                  preferred_efficiency_curve: str = ""
