@@ -881,7 +881,7 @@ def setup_ggb_fit(
   timing:          tuple[tuple[float, float], tuple[float, float], tuple[float, float]], 
   plot_ranges:     tuple[tuple[float, float], tuple[float, float]], 
   width_param:     tuple[float, bool],
-  env_params,
+  env_params_arg,
   fit_container: dict = {},
   timing_bg_sub:   bool = False):
   """Handles setting up and making plots for gamma timing, as well as fitting a 
@@ -901,12 +901,12 @@ def setup_ggb_fit(
   Returns:
       _type_: _description_
   """
-  gamma_gated_beta  = env_params["gamma_gated_beta"]
-  sig_hist_choice   = env_params["sig_hist_choice"]
-  bgg_fitter        = env_params["bgg_fitter"]
-  bgg_fitter_bkg    =  env_params["bgg_fitter_bkg"]
-  gamma_binwidth    =  env_params["gamma_binwidth"]
-  beta_window_width =  env_params["beta_window_width"]
+  gamma_gated_beta  = env_params_arg["gamma_gated_beta"]
+  sig_hist_choice   = env_params_arg["sig_hist_choice"]
+  bgg_fitter        = env_params_arg["bgg_fitter"]
+  bgg_fitter_bkg    =  env_params_arg["bgg_fitter_bkg"]
+  gamma_binwidth    =  env_params_arg["gamma_binwidth"]
+  beta_window_width =  env_params_arg["beta_window_width"]
   peak_rng, left_bg_rng, right_bg_rng = timing
   pkstr = f"{int(guess_pk)}"
   pk_erg_fit = ROOT.TF1(f"{pkstr}fit", "gaus(2) + [0] + ([1] * x)", *fit_rng) # type: ignore
