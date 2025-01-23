@@ -897,9 +897,6 @@ def setup_ggb_fit(
       env_params (dict): _description_
       fit_container (dict): container dictionary for all individual fits done
       timing_bg_sub (bool, optional): _description_. Defaults to False.
-
-  Returns:
-      _type_: _description_
   """
   gamma_gated_beta  = env_params_arg["gamma_gated_beta"]
   sig_hist_choice   = env_params_arg["sig_hist_choice"]
@@ -972,7 +969,7 @@ def setup_ggb_fit(
     "timing_peak" :     peak_timing,
     "fit_result" :      fr 
   }
-  return pk_erg_fit, right_bg_timing, left_bg_timing, peak_timing, fr
+  #return pk_erg_fit, right_bg_timing, left_bg_timing, peak_timing, fr
 
 
 def calc_bgt_from_ft(ft: float) -> float:
