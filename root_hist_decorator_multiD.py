@@ -149,7 +149,7 @@ class RootHistDecoratorMultiD:
             self.ylabel, 
             self.zlabel
         ])
-        hashvalue = hashlib.md5(bytes(hashstring.encode("ascii")), usedforsecurity=False).hexdigest()
+        hashvalue = hashlib.md5(bytes(hashstring.encode("ascii"))).hexdigest()
         return os.path.exists(path+hashvalue+".root"), hashvalue
 
 
