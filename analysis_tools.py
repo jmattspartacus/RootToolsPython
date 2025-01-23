@@ -19,7 +19,7 @@ except:
 from glob import glob
 import datetime
 from .handyutils import *
-from typing import List, Union, Callable
+from typing import List, Union, Callable, Tuple
 
 # want silent fail
 try:
@@ -876,11 +876,11 @@ def k_panel_plot(bounds,
 
 def setup_ggb_fit(
   guess_pk: float, 
-  fit_rng: tuple[float, float], 
+  fit_rng: Tuple[float, float], 
   amplitude_guess: float, 
-  timing:          tuple[tuple[float, float], tuple[float, float], tuple[float, float]], 
-  plot_ranges:     tuple[tuple[float, float], tuple[float, float]], 
-  width_param:     tuple[float, bool],
+  timing:          Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]], 
+  plot_ranges:     Tuple[Tuple[float, float], Tuple[float, float]], 
+  width_param:     Tuple[float, bool],
   env_params_arg: dict,
   fit_container: dict = {},
   timing_bg_sub:   bool = False):
@@ -969,7 +969,7 @@ def setup_ggb_fit(
     "timing_peak" :     peak_timing,
     "fit_result" :      fr 
   }
-  #return pk_erg_fit, right_bg_timing, left_bg_timing, peak_timing, fr
+  return pk_erg_fit, right_bg_timing, left_bg_timing, peak_timing, fr
 
 
 def calc_bgt_from_ft(ft: float) -> float:
