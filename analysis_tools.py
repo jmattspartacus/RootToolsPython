@@ -842,20 +842,20 @@ def k_panel_plot(bounds,
   hist.reset_x_range()
   hist.autodraw = before
   hist_bins = hist.get_bin_values_pairs()
-  fig, ax = pyplot.subplots(len(bounds),1, figsize=(12,8))
+  fig, ax = pyplot.subplots(len(bounds),1, figsize=(12,len(bounds) * 3))
   for b in range(len(bounds)):
     low, high = bounds[b]
     # get rid of bins that are <= 0
     xs = [i[0] for i in hist_bins if i[0] >= low and i[0] < high and i[1] > 0]
     ys = [i[1] for i in hist_bins if i[0] >= low and i[0] < high and i[1] > 0]
     min_above_zero = min(ys)
-    mx = max(ys)
+    max_y = max(ys)
     ax[b].step(xs, ys, linewidth=2, color="blue")
     ax[b].set_xlim(*bounds[b])
     if ylims[b] is not None:
       ax[b].set_ylim(*ylims[b])
     else:
-      ax[b].set_ylim(min_above_zero, mx*1.1)
+      ax[b].set_ylim(min_above_zero, max_y*1.1)
     for j in labels:
       # if label is in the range of this plot draw it
       if j[0] < low or j[0] > high:
@@ -881,7 +881,7 @@ def setup_ggb_fit(
   timing:          tuple[tuple[float, float], tuple[float, float], tuple[float, float]], 
   plot_ranges:     tuple[tuple[float, float], tuple[float, float]], 
   width_param:     tuple[float, bool],
-  env_params_arg,
+  env_params_arg: dict,
   fit_container: dict = {},
   timing_bg_sub:   bool = False):
   """Handles setting up and making plots for gamma timing, as well as fitting a 
