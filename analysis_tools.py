@@ -894,7 +894,7 @@ def setup_ggb_fit(
       timing (tuple[tuple[float, float], tuple[float, float], tuple[float, float]]): _description_
       plot_ranges (tuple[tuple[float, float], tuple[float, float]]): _description_
       width_param (tuple[float, bool]): _description_
-      env_params (_type_): _description_
+      env_params (dict): _description_
       fit_container (dict): container dictionary for all individual fits done
       timing_bg_sub (bool, optional): _description_. Defaults to False.
 
