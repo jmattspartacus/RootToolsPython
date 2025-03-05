@@ -967,7 +967,9 @@ def setup_ggb_fit(
     "timing_left_bg":   left_bg_timing,
     "timing_right_bg" : right_bg_timing,
     "timing_peak" :     peak_timing,
-    "fit_result" :      fr 
+    "fit_result" :      fr,
+    "cts" : integral_val,
+    "cts_err" : integral_val_err
   }
   return pk_erg_fit, right_bg_timing, left_bg_timing, peak_timing, fr
 
