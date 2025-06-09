@@ -111,8 +111,7 @@ class RootHistDecoratorMultiD:
         self.cache_location = cache_location
         self.histfile = None
         self.cache_loaded = False
-        if logz:
-            self.canvas.Logz(1)
+        self.canvas.SetLogz(logz * 1)
         if build_hist:
             self.rebuild_hist(False, force_rebuild=force_rebuild)
             
