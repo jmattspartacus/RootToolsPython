@@ -18,7 +18,7 @@ from .par_iter import *
 from .root_to_pyplot import *
 from sys import argv, platform
 # uses readline, which is not available for windows
-if platform == "linux" or platform == "linux2" or platform == "darwin":
-    from .prepinteractive import *
-if not parsing.parse_boolean(argv, "silent", silent=True, output_message="", only_output_on_success=False):
-    print("Contact James if you have issues with RootTools!")
+#if platform == "linux" or platform == "linux2" or platform == "darwin":
+#    from .prepinteractive import *
+#if not parsing.parse_boolean(argv, "silent", silent=True, output_message="", only_output_on_success=False):
+#    print("Contact James if you have issues with RootTools!")
