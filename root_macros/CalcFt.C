@@ -32,8 +32,8 @@ std::vector<double> CalcFt(int zed, double qbeta, double dqbeta, double hl, doub
         double fp=pow(10, FermiIntegral(zed,qbeta+dqbeta));
         double fm=pow(10, FermiIntegral(zed,qbeta-dqbeta));
         if(dqbeta==0){
-        fp=f;
-        fm=f;
+           fp=f;
+           fm=f;
         }
         double dfh=fp-f;
         double dfl=f-fm;
@@ -46,17 +46,19 @@ std::vector<double> CalcFt(int zed, double qbeta, double dqbeta, double hl, doub
         double dfth2 = f*dhl/1000./br;
         double brmin = br-dbr;
         if(brmin<=0){
-        brmin=1e-5;
+           brmin=1e-5;
         }
         double dfth3 = f*hl/1000.*(1/brmin-1/br);
-        double dfth=sqrt(pow(dfth1,2)+pow(dfth2,2)+pow(dfth3,2));
+        double dfth  = sqrt(pow(dfth1,2)+pow(dfth2,2)+pow(dfth3,2));
         double dftl1 = dfl*hl/1000./br;
         double dftl2 = f*dhl/1000./br;
         double brmax = std::min(1., br+dbr);
         double dftl3 = f*hl/1000.*(1/br-1/brmax);
-        double dftl=sqrt(pow(dftl1,2)+pow(dftl2,2)+pow(dftl3,2));
-        if(dftl>=ft){
-        dftl=ft;
+        double dftl4 = fm*(hl-dhl)/1000./brmax;
+        //dftl=sqrt(pow(dftl1,2)+pow(dftl2,2)+pow(dftl3,2));
+        double dftl=abs(ft-dftl4); 
+        if(dftl>=ft*0.99){
+           dftl=ft*0.99;
         }
         return {ft, dftl, dfth};
     }
