@@ -20,7 +20,8 @@ from glob import glob
 import datetime
 from .handyutils import *
 from typing import List, Union, Callable, Tuple
-
+from scipy.interpolate import PchipInterpolator
+import re
 # want silent fail
 try:
     from tqdm import tqdm
@@ -831,6 +832,34 @@ def simpson_integration(low: float, high: float, step_size: float, fn: Callable[
         ret /= step_size
     return ret * h * post
 
+def simpson_integration_points(low: float, high: float, step_size: float, hist_integral: bool, x: List[float], y: List[float]) -> float:
+    """Uses simpsons 3/8 integration to integrate a point series on a range, 
+    using Scipy's PchipInterpolator to estimate the values in the range
+    see -> https://en.wikipedia.org/wiki/Simpson%27s_rule
+    Args:
+        low (float): lower range of the integration
+        high (float): upper range of the integration
+        step_size (float): step size to integrate through
+        hist_integral (bool): if the function you're integrating was fit to a histogram, this should be True, 
+        this ensuring that the integration returns the correct value
+        data (List[Tuple[float, float]]): series of points, assumed in order
+    Returns:
+        float: result of the integration
+    """
+    # extrapolate because we want to fail silently in case we're using this for other things
+    fn_obj = PchipInterpolator(x, y, extrapolate=True)
+    post = 3.0 / 8.0
+    # b - a = 3h -> h = step_size / 3
+    h = step_size / 3
+    ret = 0.0
+    
+    for a in numpy.arange(low, high, step_size):
+        eval_at = fn_obj([a, a + h, a + 2 * h, a+step_size])
+        ret += eval_at[0] + 3 * eval_at[1] + 3 * eval_at[2] + eval_at[3]
+    if hist_integral:
+        ret /= step_size
+    return ret * h * post
+
 
 def k_panel_plot(bounds, 
                  ylims, 
@@ -976,6 +1005,32 @@ def setup_ggb_fit(
 
 def calc_bgt_from_ft(ft: float) -> float:
   return 6144.2 / (ft * (1.27**2))
+
+
+def isotope_str_to_zn_tuple(isotope: str) -> Tuple[int, int]:
+  elements = {
+    "H":  1,   "He": 2,   "Li": 3,   "Be": 4,   "B":  5,   "C":  6,   "N":  7,   "O":  8,   "F":  9,   "Ne": 10,
+    "Na": 11,  "Mg": 12,  "Al": 13,  "Si": 14,  "P":  15,  "S":  16,  "Cl": 17,  "Ar": 18,  "K":  19,  "Ca": 20,
+    "Sc": 21,  "Ti": 22,  "V":  23,  "Cr": 24,  "Mn": 25,  "Fe": 26,  "Co": 27,  "Ni": 28,  "Cu": 29,  "Zn": 30,
+    "Ga": 31,  "Ge": 32,  "As": 33,  "Se": 34,  "Br": 35,  "Kr": 36,  "Rb": 37,  "Sr": 38,  "Y":  39,  "Zr": 40,
+    "Nb": 41,  "Mo": 42,  "Tc": 43,  "Ru": 44,  "Rh": 45,  "Pd": 46,  "Ag": 47,  "Cd": 48,  "In": 49,  "Sn": 50,
+    "Sb": 51,  "Te": 52,  "I":  53,  "Xe": 54,  "Cs": 55,  "Ba": 56,  "La": 57,  "Ce": 58,  "Pr": 59,  "Nd": 60,
+    "Pm": 61,  "Sm": 62,  "Eu": 63,  "Gd": 64,  "Tb": 65,  "Dy": 66,  "Ho": 67,  "Er": 68,  "Tm": 69,  "Yb": 70,
+    "Lu": 71,  "Hf": 72,  "Ta": 73,  "W":  74,  "Re": 75,  "Os": 76,  "Ir": 77,  "Pt": 78,  "Au": 79,  "Hg": 80,
+    "Tl": 81,  "Pb": 82,  "Bi": 83,  "Po": 84,  "At": 85,  "Rn": 86,  "Fr": 87,  "Ra": 88,  "Ac": 89,  "Th": 90,
+    "Pa": 91,  "U":  92,  "Np": 93,  "Pu": 94,  "Am": 95,  "Cm": 96,  "Bk": 97,  "Cf": 98,  "Es": 99,  "Fm": 100,
+    "Md": 101, "No": 102, "Lr": 103, "Rf": 104, "Db": 105, "Sg": 106, "Bh": 107, "Hs": 108, "Mt": 109, "Ds": 110,
+    "Rg": 111, "Cn": 112, "Nh": 113, "Fl": 114, "Mc": 115, "Lv": 116, "Ts": 117, "Og": 118
+  }
+  element = re.search("([a-zA-Z]+)", isotope)
+  mass_number_str = re.search("(\d+)", isotope)
+  if mass_number_str is not None and element is not None:
+    mass_number = int(mass_number_str.group(1))
+    if element.group(1) in elements:
+      return (elements[element.group(1)], mass_number - elements[element.group(1)])
+            
+    raise ValueError("{} is not an element".format(element.group(1)))
+  raise ValueError("Failed to find valid match in '{}'".format(isotope))
 
 if __name__ == "__main__":
     args = sys.argv
