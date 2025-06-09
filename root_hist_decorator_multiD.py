@@ -88,8 +88,11 @@ class RootHistDecoratorMultiD:
         # internal directory system
         if thistname == "default-h":
             thistname = get_random_str(100)
-
-        self.canvas         = ROOT.TCanvas(thistname+"canvas", thistname+"canvas", 800, 600)# type: ignore
+        canvas_name = thistname+"canvas"
+        # prevent overlapping names
+        if ROOT.gROOT.FindObject():
+            canvas_name += get_random_str(16)
+        self.canvas         = ROOT.TCanvas(canvas_name, canvas_name, 800, 600)# type: ignore
         self.histname       = thistname
         self.histtitle      = histtitle
         self.xlabel         = xlabel
