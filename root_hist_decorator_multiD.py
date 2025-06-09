@@ -38,7 +38,8 @@ class RootHistDecoratorMultiD:
             build_hist: bool = True, 
             num_workers: int = 16, 
             cache_location: str = "./cached_data/hists/", 
-            force_rebuild: bool = False
+            force_rebuild: bool = False,
+            logz: bool = True
         ):
         """
 
@@ -62,7 +63,7 @@ class RootHistDecoratorMultiD:
             num_workers (int, optional): number of threads used to fill the histogram if it is a multithreaded build candidate. Defaults to 16.
             cache_location (str, optional): the location that cached copies of the histogram are saved when filled, if already built, this is the location that rebuild_hist looks for the cached histogram. Defaults to "./cached_data/hists/".
             force_rebuild (bool, optional): If true this will cause the histogram to be refilled even if it's already been made and cached. Defaults to False.
-
+            logz (bool, optional): If true, histogram will be drawn with a logz scale. Defaults to True.
         Raises:
             ValueError: Raised when the dimension of the histogram is determined to be more than 3 because it's not supported.
         """
@@ -107,8 +108,10 @@ class RootHistDecoratorMultiD:
         self.cache_location = cache_location
         self.histfile = None
         self.cache_loaded = False
+        if logz:
+            self.canvas.Logz(1)
         if build_hist:
-            self.rebuild_hist(False, force_rebuild=False)
+            self.rebuild_hist(False, force_rebuild=force_rebuild)
             
     @staticmethod
     def from_dict(d):
@@ -222,6 +225,8 @@ class RootHistDecoratorMultiD:
         Args:
             checkdraw (bool, optional): Should we check whether we autodraw? If true draws after building. Defaults to True.
         """
+        if self.chain is None:
+            raise ValueError("Cannot build histogram with a null chain!")
         exists, _ = self.get_is_cached_and_hash(self.cache_location)
         if self.histfile is not None:
             # prevent file ptr errors
@@ -899,16 +904,16 @@ class RootHistDecoratorMultiD:
         xbinning = Binning(bin_width, low, high)
         if dims > 1:
             numbins = histogram.GetNbinsY()
-            low     = histogram.GetYaxis().GetYmin()
-            high    = histogram.GetYaxis().GetYmax()
+            low     = histogram.GetYaxis().GetXmin()
+            high    = histogram.GetYaxis().GetXmax()
             bin_width = (high - low) / numbins
             _ybinning = Binning(bin_width, low, high)
         else:
             _ybinning = Binning(0,0,0)
         if dims > 2:
             numbins = histogram.GetNbinsY()
-            low     = histogram.GetYaxis().GetYmin()
-            high    = histogram.GetYaxis().GetYmax()
+            low     = histogram.GetYaxis().GetXmin()
+            high    = histogram.GetYaxis().GetXmax()
             bin_width = (high - low) / numbins
             _zbinning = Binning(bin_width, low, high)
         else:
