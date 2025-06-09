@@ -208,6 +208,7 @@ class Beta_2N_Analyzer:
                 debugcallback(f"matrix array\n[\n{dbgstr}]")
                 ret.append(covmat)
             debugcallback("Assigning subactivity parameters")
+            func.SetNpx(10000)
             for j in idxs:
                 # background
                 if j == 1 and separate_background_func:
