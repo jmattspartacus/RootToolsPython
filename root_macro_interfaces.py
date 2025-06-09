@@ -3,6 +3,7 @@ import os
 from sys import platform
 from typing import Dict, Union
 from . import util
+from . import analysis_tools
 macro_files = [ util.platpath(i) for i in [
     "root_macros/ReadPIDCut.C",
     "root_macros/MakePIDCut.C",
@@ -89,7 +90,9 @@ def CalcFt(Z: int,
            mother_halflife: float,
            d_mother_halflife: float,
            branching_ratio: float,
-           d_branching_ratio: float) -> Dict[str, float]:
+           d_branching_ratio: float,
+           Ex: float = 0.0,
+           dEx: float = 0.0) -> Dict[str, float]:
     """Calculates the ft value for a transition, all types are strict
 
     Args:
@@ -100,7 +103,8 @@ def CalcFt(Z: int,
         d_mother_halflife (float): Uncertainty of the halflife of the mother state (ms)
         branching_ratio (float): Branching ratio of the daughter state (fractional)
         d_branching_ratio (float): Uncertainty in the branching ratio of the daughter state (fractional)
-
+        Ex (float): energy of the populated excited state (keV)
+        dEx (float): Uncertainty in the energy of the populated excited state (keV)
     Raises:
         TypeError: If Z is not an int
         TypeError: If any of the other arguments are not floats
@@ -110,14 +114,16 @@ def CalcFt(Z: int,
     """
     if not isinstance(Z, int):
         raise TypeError("Z must be an integer!")
-    args = [q_beta, d_q_beta, mother_halflife, d_mother_halflife, branching_ratio, d_branching_ratio]
+    args = [q_beta, d_q_beta, mother_halflife, d_mother_halflife, branching_ratio, d_branching_ratio, Ex, dEx]
     arg_strs = ["q_beta", "d_q_beta", "mother_halflife", "d_mother_halflife", "branching_ratio", "d_branching_ratio"]
     for i in range(len(args)):
         t_arg = args[i]
         if not isinstance(t_arg, float):
             raise TypeError(f"{arg_strs[i]} must be a float! Got a {type(t_arg)}")
     try:
-        ret = ROOT.CalcFt(Z, q_beta, d_q_beta, mother_halflife, d_mother_halflife, branching_ratio, d_branching_ratio)
+        Qval = q_beta - Ex
+        dQ   = Qval * analysis_tools.add_errors_in_quadrature((Ex, dEx), (q_beta, d_q_beta))
+        ret = ROOT.CalcFt(Z, Qval, dQ, mother_halflife, d_mother_halflife, branching_ratio, d_branching_ratio)
         return {
             "ft" :     float(ret[0]),
             "d_ft_l" : float(ret[1]),
