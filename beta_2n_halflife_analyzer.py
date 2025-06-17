@@ -294,10 +294,18 @@ class Beta_2N_Analyzer:
 
     def reset(self) -> None:
         for i in range(8):
-            if self.func_obj.GetParError(i) == 0:
-                self.func_obj.FixParameter(i, self.initial_parameters[i])
+            elem = self.initial_parameters[i]
+            if not isinstance(elem, tuple):
+                if self.func_obj.GetParError(i) == 0:
+                    self.func_obj.FixParameter(i, self.initial_parameters[i])
+                else:
+                    self.func_obj.SetParameter(i, self.initial_parameters[i])
             else:
-                self.func_obj.SetParameter(i, self.initial_parameters[i])
+                if self.func_obj.GetParError(i) == 0:
+                    self.func_obj.FixParameter(i, self.initial_parameters[i][0])
+                else:
+                    self.func_obj.SetParameter(i, self.initial_parameters[i][0])
+                    self.func_obj.SetParError(i, self.initial_parameters[i][1])
 
     def save_fit_parameters(
         self,
