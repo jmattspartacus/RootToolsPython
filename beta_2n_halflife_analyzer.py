@@ -146,18 +146,19 @@ class Beta_2N_Analyzer:
             self.func_obj.FixParameter(2, P_n_guess)
             self.func_obj.FixParameter(3, P_2n_guess)
 
-    def SetMotherHalflife(self, val: float, lim_up: float = None, lim_down: float = None) -> None:
+
+    def set_mother_halflife(self, val: float, lim_up: float = None, lim_down: float = None) -> None:
         if lim_up is not None and lim_down is not None:
             self.func_obj.SetParLimits(4, lim_down, lim_down)
         self.func_obj.SetParameter(4, val)
 
-    def SetA0(self, val: float) -> None:
+    def set_a0(self, val: float) -> None:
         if val <= 0.0:
             return
         self.func_obj.SetParameter(0, val)
         self.initial_parameters[0] = val
 
-    def BuildSubActivities(self, 
+    def build_subactivities(self, 
                            includeBackground: bool = True, 
                            debugcallback = lambda a : (), 
                            include_cov:bool = True, 
@@ -222,7 +223,7 @@ class Beta_2N_Analyzer:
         return ret
 
 
-    def CalculateResiduals(
+    def calculate_residuals(
             self, 
             other_hist: ROOT.TH1I,
             low=-1e8,
@@ -238,12 +239,12 @@ class Beta_2N_Analyzer:
         del(t_hist)
         
 
-    def PlotComponents(
+    def plot_components(
         self,
         hist: ROOT.TH1 = None, 
         include_total: bool = True
     ) -> None:
-        subact = self.BuildSubActivities()
+        subact = self.build_subactivities()
         if hist is not None:
             hist.Draw()
         col = 2
@@ -258,7 +259,7 @@ class Beta_2N_Analyzer:
 
 
 
-    def Fit(
+    def fit(
         self, 
         hist: ROOT.TH1, 
         opt: str = "SQLM", 
@@ -282,7 +283,7 @@ class Beta_2N_Analyzer:
             self.most_recent_fit_result = result
             return result
 
-    def SetBackground(self, val: float, fixed_bg: bool = True) -> None:
+    def set_background(self, val: float, fixed_bg: bool = True) -> None:
         if val < 0:
             return
         if fixed_bg:
@@ -291,7 +292,7 @@ class Beta_2N_Analyzer:
             self.func_obj.SetParameter(1, val)
         self.initial_parameters[1] = val
 
-    def Reset(self) -> None:
+    def reset(self) -> None:
         for i in range(8):
             if self.func_obj.GetParError(i) == 0:
                 self.func_obj.FixParameter(i, self.initial_parameters[i])
@@ -371,10 +372,10 @@ class Beta_2N_Analyzer:
         m_lambda = Lambda_override if Lambda_override is not None else lit_vals.nudat.GetDecayConstant(isotope)
         A0_start = A0_start_override if A0_start_override is not None else 0.5
     
-        zn         = lit_vals.IsotopeStrToZNTuple(isotope)
-        daughter   = lit_vals.ZNTupleToIsotopeStr((zn[0] + 1, zn[1] - 1))
-        ndaughter  = lit_vals.ZNTupleToIsotopeStr((zn[0] + 1, zn[1] - 2))
-        n2daughter = lit_vals.ZNTupleToIsotopeStr((zn[0] + 1, zn[1] - 3))
+        zn         = lit_vals.isotope_str_to_zn_tuple(isotope)
+        daughter   = lit_vals.zn_tuple_to_isotope_str((zn[0] + 1, zn[1] - 1))
+        ndaughter  = lit_vals.zn_tuple_to_isotope_str((zn[0] + 1, zn[1] - 2))
+        n2daughter = lit_vals.zn_tuple_to_isotope_str((zn[0] + 1, zn[1] - 3))
         ret = Beta_2N_Analyzer(
             isotope,
             fitname=name,
