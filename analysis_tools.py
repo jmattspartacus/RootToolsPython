@@ -914,7 +914,8 @@ def setup_ggb_fit(
   fit_container: dict = {},
   timing_bg_sub:   bool = False,
   bgg_amp_guess: float = 1.0,
-  bkg_guess:     float = 0.0
+  bkg_guess:     float = 0.0,
+  fit_opts: str = "SQLM"
   ):
 #   """Handles setting up and making plots for gamma timing, as well as fitting a 
 #   gaussian on a linear background to the peak
@@ -929,6 +930,9 @@ def setup_ggb_fit(
 #       env_params (dict): _description_
 #       fit_container (dict): container dictionary for all individual fits done
 #       timing_bg_sub (bool, optional): _description_. Defaults to False.
+#       bkg_guess (float, optional): guess for the constant background in gamma gated beta fitting. Defaults to 1.0
+#       bgg_amp_guess (float, optional): guess for the initial amplitude of the gamma gated beta spectra. Defaults to 0.0
+#       fit_opts: (str, optional): options to be supplied to the fit for the gamma gated beta spectra, defaults to "SQLM"
 #   """
   gamma_gated_beta  = env_params_arg["gamma_gated_beta"]
   sig_hist_choice   = env_params_arg["sig_hist_choice"]
@@ -956,7 +960,8 @@ def setup_ggb_fit(
   else:
     pk_erg_fit.SetParameter(4, width_param[0]) 
     pk_erg_fit.SetParLimits(4, 0, 10)
-  t_pkstr = f"{int(guess_pk)}"
+  random_suffix = random_string(16)
+  t_pkstr = f"{int(guess_pk)}_sig_{random_suffix}"
   # narrow the energy gate on the peak
   gamma_gated_beta.set_x_range(*peak_rng)
   # timing of the peak
@@ -964,11 +969,11 @@ def setup_ggb_fit(
   # narrow to the left handed background
   gamma_gated_beta.set_x_range(*left_bg_rng)
   # timing of the left handed background
-  right_bg_timing = gamma_gated_beta.project_onto_y(f"bgr_{t_pkstr}")
+  right_bg_timing = gamma_gated_beta.project_onto_y(f"bgr_{t_pkstr}_{random_suffix}")
   # narrow in on right handed background
   gamma_gated_beta.set_x_range(*right_bg_rng)
   # timing of the right handed background
-  left_bg_timing = gamma_gated_beta.project_onto_y(f"bgl_{t_pkstr}")
+  left_bg_timing = gamma_gated_beta.project_onto_y(f"bgl_{t_pkstr}_{random_suffix}")
 
   # scale left and right handed background by 0.5 and subtract
   if timing_bg_sub:
@@ -983,7 +988,7 @@ def setup_ggb_fit(
 
   # do the fit
   bgg_fitter.fit(
-    peak_timing.hist
+    peak_timing.hist, opt=fit_opts
   )
   half = decay_constant_to_halflife(bgg_fitter.func_obj.GetParameter(4))
   if bgg_fitter.func_obj.GetParameter(4) < 1e-5:
@@ -998,11 +1003,10 @@ def setup_ggb_fit(
   lin_const_terms.SetParameter(1, pk_erg_fit.GetParameter(1))
   integral_val = simpson_integration(*fit_rng, gamma_binwidth, pk_erg_fit.Eval, True) - simpson_integration(*fit_rng, gamma_binwidth, lin_const_terms.Eval, True)
   integral_val_err = 0
-  print(f"Counts in pk {integral_val}")
   # getting counts in the timing spectra
   bgg_fitter_bkg.SetParameter(0, bgg_fitter.func_obj.GetParameter(1))
   bgg_timing_integral = bgg_fitter.func_obj.Integral(-100, beta_window_width) - bgg_fitter_bkg.Integral(-100, beta_window_width)
-  print(f"Bgg counts {bgg_timing_integral}")
+  print(f"Bgg counts: {bgg_timing_integral}; Counts in pk: {integral_val}")
   
   fit_container[pkstr] = {
     "erg_fit":          pk_erg_fit,
