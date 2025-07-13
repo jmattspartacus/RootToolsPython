@@ -7,10 +7,18 @@ def root_line_style_to_pyplot(root_line_style: int) -> str:
   #kDotted     = 3
   #kDashDotted = 4
   ret_vals = [
-    "solid",
-    "dashed",
-    "dotted",
-    "dashdot"
+    "-"
+    "solid",    # Solid line
+    "dashed",   # Dashed line
+    "dotted",    # Dotted line
+    "dashdot",   # Dash-dotted line
+    ("."),  # Dots (Matplotlib doesn't support directly)
+    ("-,"), # Long dashes (approximate)
+    (":,"), # Dotted-dash
+    ("-."), # Alternate dash-dot
+    ("--"), # Similar to dashed
+    ":",    # Similar to dotted
+    "-",    # Default to solid
   ]
   if root_line_style > 0 and root_line_style < len(ret_vals):
     return ret_vals[root_line_style]
