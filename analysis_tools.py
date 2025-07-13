@@ -961,11 +961,11 @@ def setup_ggb_fit(
     pk_erg_fit.SetParameter(4, width_param[0]) 
     pk_erg_fit.SetParLimits(4, 0, 10)
   random_suffix = random_string(16)
-  t_pkstr = f"{int(guess_pk)}_sig_{random_suffix}"
+  t_pkstr = f"{int(guess_pk)}"
   # narrow the energy gate on the peak
   gamma_gated_beta.set_x_range(*peak_rng)
   # timing of the peak
-  peak_timing = gamma_gated_beta.project_onto_y(t_pkstr)
+  peak_timing = gamma_gated_beta.project_onto_y(t_pkstr+f"_sig_{random_suffix}")
   # narrow to the left handed background
   gamma_gated_beta.set_x_range(*left_bg_rng)
   # timing of the left handed background
