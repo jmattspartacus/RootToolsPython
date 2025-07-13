@@ -912,25 +912,34 @@ def setup_ggb_fit(
   width_param:     Tuple[float, bool],
   env_params_arg: dict,
   fit_container: dict = {},
-  timing_bg_sub:   bool = False):
-  """Handles setting up and making plots for gamma timing, as well as fitting a 
-  gaussian on a linear background to the peak
+  timing_bg_sub:   bool = False,
+  bgg_amp_guess: float = 1.0,
+  bkg_guess:     float = 0.0
+  ):
+#   """Handles setting up and making plots for gamma timing, as well as fitting a 
+#   gaussian on a linear background to the peak
 
-  Args:
-      guess_pk (float): guess for the peak
-      fit_rng (tuple[float, float]): range for fitting the peak
-      amplitude_guess (float): initial guess for the amplitude of the peak
-      timing (tuple[tuple[float, float], tuple[float, float], tuple[float, float]]): _description_
-      plot_ranges (tuple[tuple[float, float], tuple[float, float]]): _description_
-      width_param (tuple[float, bool]): _description_
-      env_params (dict): _description_
-      fit_container (dict): container dictionary for all individual fits done
-      timing_bg_sub (bool, optional): _description_. Defaults to False.
-  """
+#   Args:
+#       guess_pk (float): guess for the peak
+#       fit_rng (Tuple[float, float]): range for fitting the peak
+#       amplitude_guess (float): initial guess for the amplitude of the peak
+#       timing (Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]): _description_
+#       plot_ranges (Tuple[Tuple[float, float], Tuple[float, float]]): _description_
+#       width_param (Tuple[float, bool]): _description_
+#       env_params (dict): _description_
+#       fit_container (dict): container dictionary for all individual fits done
+#       timing_bg_sub (bool, optional): _description_. Defaults to False.
+#   """
   gamma_gated_beta  = env_params_arg["gamma_gated_beta"]
   sig_hist_choice   = env_params_arg["sig_hist_choice"]
   bgg_fitter        = env_params_arg["bgg_fitter"]
+  bgg_fitter.reset()
+  bgg_fitter.func_obj.SetParameter(0, bgg_amp_guess)
+  bgg_fitter.func_obj.SetParameter(1, bkg_guess)
+
   bgg_fitter_bkg    =  env_params_arg["bgg_fitter_bkg"]
+  bgg_fitter_bkg.SetParameter(0, 0.0)
+  
   gamma_binwidth    =  env_params_arg["gamma_binwidth"]
   beta_window_width =  env_params_arg["beta_window_width"]
   peak_rng, left_bg_rng, right_bg_rng = timing
@@ -973,11 +982,14 @@ def setup_ggb_fit(
   fr = sig_hist_choice.hist.Fit(f"{t_pkstr}fit", "SQLM", "H", *fit_rng)
 
   # do the fit
-  bgg_fitter.Fit(
-      peak_timing.hist,
+  bgg_fitter.fit(
+    peak_timing.hist
   )
   half = decay_constant_to_halflife(bgg_fitter.func_obj.GetParameter(4))
-  half_err = decay_constant_to_halflife(bgg_fitter.func_obj.GetParameter(4)) * (bgg_fitter.func_obj.GetParError(4) / bgg_fitter.func_obj.GetParameter(4))
+  if bgg_fitter.func_obj.GetParameter(4) < 1e-5:
+    half_err = 0.0
+  else:
+    half_err = half * (bgg_fitter.func_obj.GetParError(4) / bgg_fitter.func_obj.GetParameter(4))
   print(f"Halflife {half:.2f} +- {half_err:.2f}")
   print("Peak at {:.1f} pm ({:.1f}) keV amplitude {:.1f} width {:.2f}".format(pk_erg_fit.GetParameter(3), pk_erg_fit.GetParError(3), pk_erg_fit.GetParameter(2), pk_erg_fit.GetParameter(4)))
   # getting counts in the pk
@@ -985,6 +997,7 @@ def setup_ggb_fit(
   lin_const_terms.SetParameter(0, pk_erg_fit.GetParameter(0))
   lin_const_terms.SetParameter(1, pk_erg_fit.GetParameter(1))
   integral_val = simpson_integration(*fit_rng, gamma_binwidth, pk_erg_fit.Eval, True) - simpson_integration(*fit_rng, gamma_binwidth, lin_const_terms.Eval, True)
+  integral_val_err = 0
   print(f"Counts in pk {integral_val}")
   # getting counts in the timing spectra
   bgg_fitter_bkg.SetParameter(0, bgg_fitter.func_obj.GetParameter(1))
