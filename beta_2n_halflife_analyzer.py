@@ -55,12 +55,17 @@ class Beta_2N_Analyzer:
             A0_start, background, P_n_guess, P_2n_guess, halflife_info[0][0],
             halflife_info[1][0], halflife_info[2][0], halflife_info[3][0]
         ]
+        self.halflife_names = halflife_names
         self.name = name
         self.fitname = fitname
         self.fit_low = fit_low
         self.fit_high = fit_high
         self.time_units = time_units
         self.most_recent_fit_result = "Never Fit"
+        self.params_fixed = [
+            False, fix_background, not P_n_as_parameter, not P_n_as_parameter, 
+            halflife_info[0][1], halflife_info[1][1], halflife_info[2][1], halflife_info[3][1]
+        ]
 
         # original Beta 2N implementation
         # [0] => A_0
@@ -111,6 +116,7 @@ class Beta_2N_Analyzer:
         self.func_obj.SetParName(0, "A0")
         
         self.func_obj.SetParName(1, "Background")
+        # configure the parameters to use the initial parameters
         if fix_background:
             self.func_obj.FixParameter(1, background)
         else:
@@ -120,20 +126,22 @@ class Beta_2N_Analyzer:
         self.func_obj.SetParName(2, "P_n")
         self.func_obj.SetParName(3, "P_2n")
         self.func_obj.SetParLimits(0, 0, 10000)
+        # iterate 4 through 8 and use index = i -4
         for i in range(4, 8):
-            if isinstance(halflife_info[i-4][0], tuple):
-                if halflife_info[i-4][1]:
-                    self.func_obj.FixParameter(i, halflife_info[i-4][0][0])
-                    self.func_obj.SetParError(i,  halflife_info[i-4][0][1])
+            elem = halflife_info[i-4]
+            if isinstance(elem[0], tuple):
+                if elem[1]:
+                    self.func_obj.FixParameter(i, elem[0][0])
+                    self.func_obj.SetParError(i,  elem[0][1])
                 else:
-                    self.func_obj.SetParameter(i, halflife_info[i-4][0][0])
-                    self.func_obj.SetParError(i,  halflife_info[i-4][0][1])
+                    self.func_obj.SetParameter(i, elem[0][0])
+                    self.func_obj.SetParError(i,  elem[0][1])
                     self.func_obj.SetParLimits(i, 0, 2000)
             else:
-                if halflife_info[i-4][1]:
-                    self.func_obj.FixParameter(i, halflife_info[i-4][0])
+                if elem[1]:
+                    self.func_obj.FixParameter(i, elem[0])
                 else:
-                    self.func_obj.SetParameter(i, halflife_info[i-4][0])
+                    self.func_obj.SetParameter(i, elem[0])
                     self.func_obj.SetParLimits(i, 0, 2000)
             
             self.func_obj.SetParName(i, halflife_names[i-4])
@@ -296,16 +304,20 @@ class Beta_2N_Analyzer:
         for i in range(8):
             elem = self.initial_parameters[i]
             if not isinstance(elem, tuple):
-                if self.func_obj.GetParError(i) == 0:
-                    self.func_obj.FixParameter(i, self.initial_parameters[i])
+                if self.params_fixed[i]:
+                    print("Fix param", i, "with", elem)
+                    self.func_obj.FixParameter(i, elem)
                 else:
-                    self.func_obj.SetParameter(i, self.initial_parameters[i])
+                    print("Set param", i, "with", elem)
+                    self.func_obj.SetParameter(i, elem)
             else:
-                if self.func_obj.GetParError(i) == 0:
-                    self.func_obj.FixParameter(i, self.initial_parameters[i][0])
+                if self.params_fixed[i]:
+                    print("Fix param", i, "with", elem)
+                    self.func_obj.FixParameter(i, elem[0])
                 else:
-                    self.func_obj.SetParameter(i, self.initial_parameters[i][0])
-                    self.func_obj.SetParError(i, self.initial_parameters[i][1])
+                    print("Set param", i, "with", elem)
+                    self.func_obj.SetParameter(i, elem[0])
+                    self.func_obj.SetParError(i, elem[1])
 
     def save_fit_parameters(
         self,
