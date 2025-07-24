@@ -36,6 +36,7 @@ class Beta_2N_Analyzer:
         include_background_fit:bool = True,
         fix_background: bool = False,
         background_err: float = 0,
+        channel_mult: Tuple[float, float, float, float] = (1.0, 1.0, 1.0, 1.0)
     ) -> None:
         # param 0 A0
         # param 1 background
@@ -111,7 +112,9 @@ class Beta_2N_Analyzer:
         self.DaughterActivity    = daughterdefault    if beta_daughter_activity_override is None else beta_daughter_activity_override
         self.NdaughterActivity   = ndaughterdefault   if n_daughter_activity_override    is None else n_daughter_activity_override
         self.N2daughterActivity  = n2daughterdefault  if n2_daughter_activity_override   is None else n2_daughter_activity_override
-        total_activity_str = "(x >= 0.0) * (" + self.ChainMotherActivity + "+" +  self.DaughterActivity + "+" + self.NdaughterActivity + "+" + self.N2daughterActivity + ")" + ("+ [1]" if include_background_fit else "")
+        activities = [ self.ChainMotherActivity, self.DaughterActivity, self.NdaughterActivity, self.N2daughterActivity ]
+        act_str = "+".join([f"{channel_mult[i]} * {activities[i]}" for i in range(4)])
+        total_activity_str = "(x >= 0.0) * (" + act_str + ")" + ("+ [1]" if include_background_fit else "")
         self.func_obj = ROOT.TF1(fitname, total_activity_str, fit_low, fit_high)
         self.func_obj.SetParName(0, "A0")
         
