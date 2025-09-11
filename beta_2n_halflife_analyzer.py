@@ -2,6 +2,7 @@ import re
 import ROOT
 import os
 import pathlib
+import ctypes
 from .binning import Binning
 from .handyutils import *
 from typing import List, Tuple, Union
@@ -117,7 +118,7 @@ class Beta_2N_Analyzer:
         total_activity_str = "(x >= 0.0) * (" + act_str + ")" + ("+ [1]" if include_background_fit else "")
         self.func_obj = ROOT.TF1(fitname, total_activity_str, fit_low, fit_high)
         self.func_obj.SetParName(0, "A0")
-        
+        self.func_obj.SetParameter(0, A0_start)
         self.func_obj.SetParName(1, "Background")
         # configure the parameters to use the initial parameters
         if fix_background:
@@ -422,3 +423,12 @@ class Beta_2N_Analyzer:
             time_units=time_units
         )
         return ret
+
+    def print_params(self):
+        print("Fitter params:")
+        print("\tParam,Value,Err,Limits")
+        for i in range(8):
+            l = ctypes.c_double(0); r = ctypes.c_double(0)
+            self.func_obj.GetParLimits(i, l, r)
+            parname = self.func_obj.GetParName(i)[:25]
+            print(f"\t{parname:<25} {self.func_obj.GetParameter(i):.5E}, {self.func_obj.GetParError(i):.5E}, ({l.value:.5E}, {r.value:.5E})")
