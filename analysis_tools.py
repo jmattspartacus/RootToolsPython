@@ -1049,6 +1049,124 @@ def isotope_str_to_zn_tuple(isotope: str) -> Tuple[int, int]:
     raise ValueError("{} is not an element".format(element.group(1)))
   raise ValueError("Failed to find valid match in '{}'".format(isotope))
 
+def dump_tf1_to_csv(
+    ff: ROOT.TF1, fname: str, low: float, high: float, steps: int, 
+    overwrite: bool = False, axis_names: Tuple[str, str] = ("x", "y")) -> None:
+    if os.path.isfile(fname) and not overwrite:
+        raise FileExistsError("File exists and overwrite not True")
+    step = (high - low) / steps
+    with open(fname, "w+") as fp:
+        fp.write(", ".join(axis_names)+"\n")
+        for i in range(steps):
+            x = low + step * i
+            y = ff.Eval(x)
+            fp.write(f"{x}, {y}\n")
+
+def dump_th1_to_csv(
+        hh: ROOT.TH1, fname: str, 
+        overwrite: bool = False, axis_names: Tuple[str, str, str] = ("x", "y", "dy")):
+    if os.path.isfile(fname) and not overwrite:
+        raise FileExistsError("File exists and overwrite not True")
+    nbins = hh.GetNbinsX()
+    with open(fname, "w+") as fp:
+        fp.write(", ".join(axis_names)+"\n")
+        for i in range(nbins):
+            x = hh.GetBinCenter(i)
+            y = hh.GetBinContent(i)
+            dy = hh.GetBinError(i)
+            fp.write(f"{x}, {y}, {dy}\n")
+
+def load_dumped_csv(fname: str, columns: int):
+  ret = tuple([[] for _ in range(columns)])
+  with open(fname, "r") as fp:
+    header = fp.readline().replace("\n", "").split(", ")
+    ll = fp.readlines()
+    for line in ll:
+        spl = line.replace("\n", "").split(", ")
+        if len(spl) != columns:
+            continue
+        for i in range(columns):
+            ret[i].append(float(spl[i]))
+  return header, ret
+
+def load_dumped_tf1(fname: str):
+  return load_dumped_csv(fname, 2)
+
+def load_dumped_th1(fname: str):
+  return load_dumped_csv(fname, 3)
+
+
+def load_dumped_ntof_hists(where):
+  pads = {}
+
+  hists = glob(f"{where}/hists/*")
+  funcs = glob(f"{where}/funcs/*")
+  for i in funcs:
+    with open(i) as fp:
+      hist_type = fp.readline()
+      fname = fp.readline()
+      parent_pad = int(fp.readline().split(" ")[-1].replace("\n", ""))
+      # skip line with range
+      fp.readline()
+      # skip line with number of points
+      fp.readline()
+      spl = fp.readline().split(": ")[-1].replace("\n", "")
+      line_color = [(int(k) * 255) % 256 for k in spl.split(", ")]
+      
+      line_style = fp.readline().split(" ")[-1].replace("\n", "")
+      line_width = int(fp.readline().split(" ")[-1].replace("\n", ""))
+      # skip line with column headers
+      fp.readline()
+      if parent_pad not in pads:
+        pads[parent_pad] = {
+          "hist":  {
+            "values":[],
+            "yrange":(),
+            "ylabel":"none"
+          },
+          "funcs": []
+        }
+      vals = []
+      for row in fp.readlines():
+        vals.append([float(k) for k in row.split(", ")])
+      pads[parent_pad]["funcs"].append(
+        {  
+          "data": vals,
+          "line_color": "#{:02x}{:02x}{:02x}".format(*line_color),
+          "line_style": line_style,
+          "line_width": line_width,
+        }
+      )
+    
+  for i in hists:
+    with open(i) as fp:
+      hist_type = fp.readline()
+      # skip next line with name
+      fp.readline()
+      parent_pad = int(fp.readline().split(" ")[-1].replace("\n", ""))
+      yrange_str = fp.readline().split(": ")[-1].replace("\n", "").split(",")
+      yrange = (float(yrange_str[0]), float(yrange_str[1]))
+      # skip line with number of bins
+      fp.readline()
+      ylabel = fp.readline().split(": ")[-1].replace("\n", "")
+      # skip line with column headers
+      fp.readline()
+      if parent_pad not in pads:
+        pads[parent_pad] = {
+          "hist":  {
+            "values":[],
+            "yrange":yrange,
+            "ylabel":"none"
+          },
+          "funcs": []
+        }
+      pads[parent_pad]["hist"]["ylabel"] = ylabel
+      pads[parent_pad]["hist"]["yrange"] = yrange
+      for row in fp.readlines():
+        vals = [float(k) for k in row.split(", ")]
+        pads[parent_pad]["hist"]["values"].append(vals)
+  return pads
+
 if __name__ == "__main__":
     args = sys.argv
     from . import parsing

@@ -985,7 +985,7 @@ class RootHistDecoratorMultiD:
         xrng = [i for i in self.ranges[0]]
         yrng = [i for i in self.ranges[1]]
         self.reset_x_range()
-        bins = self.get_bin_values_pairs()
+        bins = self.get_bin_values_pairs(discard_negative=False)
         self.set_x_range(*xrng)
         self.set_y_range(*yrng)
         with open(filepath, "w+") as fp:
