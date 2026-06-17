@@ -720,6 +720,9 @@ def beta_normalization(isotope: str, radius: str) -> dict:
 def sigma_to_fwhm(sigma) -> float:
     return 2* math.sqrt(2 * math.log(2)) * sigma
 
+def fwhm_to_sigma(sigma) -> float:
+    return sigma / (2* math.sqrt(2 * math.log(2)))
+
 
 def pk_fix_fit(ctr: int, 
                diff: float, 
